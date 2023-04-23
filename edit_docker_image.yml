@@ -1,0 +1,33 @@
+- name: Configure K3s registries
+  hosts: all
+  become: true
+
+  tasks:
+    - name: Create /etc/rancher/k3s directory on nodes
+      file:
+        path: /etc/rancher/k3s
+        state: directory
+      when: "'node' in group_names"
+
+    - name: Create registries.yaml file
+      copy:
+        content: |
+          mirrors:
+            docker.io:
+              endpoint:
+                - "http://hub-mirror.c.163.com"
+                - "https://docker.mirrors.ustc.edu.cn"
+                - "https://registry.docker-cn.com"
+        dest: /etc/rancher/k3s/registries.yaml
+
+    - name: Restart K3s on Master nodes
+      systemd:
+        name: k3s
+        state: restarted
+      when: "'master' in group_names"
+
+    - name: Restart K3s Agent on Worker nodes
+      systemd:
+        name: k3s-node
+        state: restarted
+      when: "'node' in group_names"

@@ -1,0 +1,36 @@
+- name: Install and configure Docker on all
+  hosts: all
+  become: true
+  tasks:
+    - name: Install Docker
+      shell: curl -sSL get.docker.com | sudo sh
+
+    - name: Add user to Docker group
+      user:
+        name: pi
+        groups: docker
+        append: yes
+
+    - name: Create daemon.json file with configuration
+      copy:
+          content: |
+            {
+              "exec-opts": ["native.cgroupdriver=systemd"],
+              "log-driver": "json-file",
+              "log-opts": {
+                "max-size": "100m"
+              },
+              "storage-driver": "overlay2",
+              "registry-mirrors": [
+                "https://c5i6zuxm.mirror.aliyuncs.com",
+                "https://hub-mirror.c.163.com",
+                "https://dockerhub.azk8s.cn",
+                "https://reg-mirror.qiniu.com",
+                "https://docker.mirrors.ustc.edu.cn",
+                "https://registry.docker-cn.com"
+            ]
+            }
+          dest: /etc/docker/daemon.json
+
+    - name: Reboot hosts
+      reboot:
